@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" id="viewport" />
+	<title>音声分析</title>
+	<link rel="stylesheet" type="text/css" href="./index.css" />
+</head>
+<body>
+<div>
+	<form name="main">
+		<details class="fieldsets">
+			<summary>設定</summary>
+			<fieldset>
+				<legend>開始</legend>
+				<fieldset class="div" id="fieldset-mode">
+					<div>
+						<label>
+							<input type="radio" name="mode" value="0" checked />
+							無効
+						</label>
+					</div>
+					<div>
+						<label>
+							<input type="radio" name="mode" value="1" />
+							録音:
+						</label>
+						<span id="span-record">-</span>
+					</div>
+					<div>
+						<label>
+							<input type="radio" name="mode" value="2" />
+							再生:
+						</label>
+						<input type="file" name="open" accept="audio/*,video/*" />
+					</div>
+				</fieldset>
+				<div>
+					<label>
+						<input type="checkbox" name="eq-enabled" />
+						グラフィック イコライザ
+					</label>
+					<span id="span-eq">
+						&nbsp;
+						<input type="button" name="eq-reset" class="eq-reset"
+							value="リセット" />
+					</span>
+					<div class="eq" id="div-eq">
+						<span class="eq-group">
+							<label>
+								<input type="radio" name="eq-group" value="0" checked>
+								別々
+							</label>
+							<label>
+								<input type="radio" name="eq-group" value="1">
+								緩く
+							</label>
+							<label>
+								<input type="radio" name="eq-group" value="2">
+								堅く
+							</label>
+						</span>
+						<div class="eq-sliders" id="div-sliders"></div>
+					</div>
+				</div>
+			</fieldset>
+			<fieldset class="labels">
+				<legend>FFT</legend>
+				<fieldset class="div labels" id="fieldset-fft">
+					<label>
+						周波数:
+						<select name="fft-rate">
+							<option>3000</option>
+							<option>4000</option>
+							<option>6000</option>
+							<option>8000</option>
+							<option>11025</option>
+							<option>12000</option>
+							<option selected>16000</option>
+							<option>22050</option>
+							<option>24000</option>
+							<option>32000</option>
+							<option>44100</option>
+							<option>48000</option>
+						</select>
+						Hz
+					</label>
+					<label>
+						サイズ:
+						<select name="fft-size">
+							<option>32</option>
+							<option>64</option>
+							<option>128</option>
+							<option>256</option>
+							<option>512</option>
+							<option>1024</option>
+							<option>2048</option>
+							<option selected>4096</option>
+							<option>8192</option>
+							<option>16384</option>
+							<option>32768</option>
+						</select>
+					</label>
+					<label>
+						平滑化:
+						<input type="number" name="fft-stc" class="small"
+							step="0.05" min="0" max="1" value="0.2" />
+					</label>
+				</fieldset>
+				<label>
+					分析範囲:
+					<select name="option-fs">
+						<option>3000</option>
+						<option>4000</option>
+						<option>6000</option>
+						<option>8000</option>
+						<option>11025</option>
+						<option>12000</option>
+						<option selected>16000</option>
+						<option>22050</option>
+						<option>24000</option>
+						<option>32000</option>
+						<option>44100</option>
+						<option>48000</option>
+					</select>
+					Hz
+				</label>
+			</fieldset>
+			<fieldset class="labels" id="fieldset-constraints">
+				<legend>入力</legend>
+				<label>
+					デバイス:
+					<select name="constraints-device"></select>
+				</label>
+			</fieldset>
+			<p class="p">
+				<label>
+					<input type="checkbox" name="log" /> 対数
+				</label>
+				&nbsp;
+				<span>
+					<input type="range" name="min" class="reverse"
+						step="10" min="-40" max="200" value="130" title="最小" /><!--
+					--><input type="range" name="max"
+						step="10" min="-190" max="50" value="0" title="最大" />
+					<span id="text-min">#text</span> ~
+					<span id="text-max">#text</span> dB
+				</span>
+				<span class="save">
+					<input type="button" name="save" value="保存" />
+					<input type="button" name="delete" value="削除" />
+				</span>
+			</p>
+			<hr />
+		</details>
+		<p class="player" id="p-player"></p>
+		<p>
+			<input type="button" name="start" value="開始" />
+			&nbsp;
+			<label>
+				次数:
+				<input type="range" name="order" min="0" max="32" value="12" />
+				<span id="text-order">#text</span>
+			</label>
+			&nbsp;
+			<span>
+				検出:
+				<label>
+					<input type="radio" name="detect" value="0" checked />求根
+				</label>
+				<label>
+					<input type="radio" name="detect" value="1" />極値
+				</label>
+			</span>
+		</p>
+	</form>
+	<div class="container" id="container">
+		<div class="main">
+			<canvas width="600" height="300" id="canvas-fft"></canvas>
+			<canvas width="600" height="300" id="canvas-spc"></canvas>
+		</div><!--
+		--><div class="sub">
+			<canvas width="300" height="225" id="canvas-f"></canvas><!--
+			--><canvas width="300" height="225" id="canvas-s"></canvas>
+		</div>
+	</div>
+</div>
+<script type="text/javascript" src="./script/va.js"></script>
+<script type="text/javascript" src="./script/plot.js"></script>
+<script type="text/javascript" src="./script/main.js"></script>
+<script type="text/javascript" src="./index.js"></script>
+</body>
+</html>
