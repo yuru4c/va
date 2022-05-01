@@ -49,6 +49,13 @@ function getGetUserMedia() {
 	};
 }
 
+function stop(stream) {
+	var tracks = stream.getTracks();
+	for (var i = 0; i < tracks.length; i++) {
+		tracks[i].stop();
+	}
+}
+
 function FFTOption(sampleRate, sampleSize, smoothing, eq) {
 	this.sampleRate = sampleRate;
 	this.sampleSize = sampleSize;
@@ -186,11 +193,16 @@ Context.prototype.createFFT = function (sampleRate) {
 };
 
 Context.prototype.start = function (constraints) {
-	var audio = { audio: constraints };
-	if (this.getUserMedia != null) {
-		return this.getUserMedia(audio).then(this.__start);
+	if ('video' in constraints) {
+		return navigator.mediaDevices.getDisplayMedia(constraints)
+			.then(this.__start);
 	}
-	return navigator.mediaDevices.getUserMedia(audio).then(this.__start);
+	if (this.getUserMedia != null) {
+		return this.getUserMedia(constraints)
+			.then(this.__start);
+	}
+	return navigator.mediaDevices.getUserMedia(constraints)
+		.then(this.__start);
 };
 Context.prototype._start = function (stream) {
 	var fft = this.createFFT(this.fftOption.sampleRate);
@@ -209,7 +221,12 @@ Context.prototype._start = function (stream) {
 			}
 		}
 		fft = this.createFFT(sampleRate);
-		source = fft.context.createMediaStreamSource(stream);
+		try {
+			source = fft.context.createMediaStreamSource(stream);
+		} catch (e) {
+			stop(stream);
+			throw e;
+		}
 	}
 	fft.init(this.fftOption);
 	source.connect(fft.destination);
@@ -236,10 +253,7 @@ Context.prototype.stop = function () {
 	this.source.disconnect();
 	this.source = null;
 	if (this.stream != null) {
-		var tracks = this.stream.getTracks();
-		for (var i = 0; i < tracks.length; i++) {
-			tracks[i].stop();
-		}
+		stop(this.stream);
 		this.stream = null;
 	}
 	this.fft.analyser.disconnect();
@@ -253,12 +267,11 @@ Context.prototype.getFFT = function () {
 
 function Recorder(stream) {
 	var self = this;
-	var chunks = [];
-	
 	this.mediaRecorder = new MediaRecorder(stream);
 	this.date = null;
 	this.recording = false;
 	
+	var chunks = [];
 	this.type = null;
 	this.blob = null;
 	
@@ -281,6 +294,7 @@ function Recorder(stream) {
 		chunks.push(event.data);
 	};
 	this.mediaRecorder.onstop = function () {
+		if (!self.recording) return;
 		self.recording = false;
 		try {
 			self.blob = new Blob(chunks, { type: self.type });
@@ -313,7 +327,7 @@ Recorder.prototype.stop = function (callback) {
 };
 
 Recorder.prototype.getName = function () {
-	return '録音 - ' + (
+	return (/^video\//i.test(this.type) ? '録画' : '録音') + ' - ' + (
 		formatInt(4, this.date.getFullYear()) +
 		formatInt(2, this.date.getMonth() + 1) +
 		formatInt(2, this.date.getDate()) + 'T' +
@@ -441,10 +455,11 @@ function getValues(elements) {
 	var values = {};
 	for (var i = 0; i < elements.length; i++) {
 		var element = elements[i];
-		if (!element.name) continue;
+		var name = element.name;
+		if (!name) continue;
 		switch (element.tagName) {
 			case 'SELECT':
-			values[element.name] = element.selectedIndex;
+			values[name] = element.selectedIndex;
 			continue;
 			case 'INPUT':
 			switch (element.type) {
@@ -452,17 +467,17 @@ function getValues(elements) {
 				case 'file':
 				continue;
 				case 'checkbox':
-				values[element.name] = element.checked;
+				values[name] = element.checked;
 				continue;
 				case 'radio':
 				if (element.checked) {
-					values[element.name] = element.value;
+					values[name] = element.value;
 				}
 				continue;
 			}
 			break;
 		}
-		values[element.name] = element.value;
+		values[name] = element.value;
 	}
 	return values;
 }

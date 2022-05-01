@@ -12,19 +12,6 @@ input[type="range"][orient="vertical"] {
 	-webkit-appearance: slider-vertical;
 }
 
-.p > * {
-	display: inline-block;
-	white-space: nowrap;
-}
-.p:after {
-	content: '';
-	display: block;
-	clear: right;
-}
-.save {
-	float: right;
-}
-
 .fieldsets > fieldset {
 	display: inline-block;
 	vertical-align: top;
@@ -34,15 +21,11 @@ input[type="range"][orient="vertical"] {
 	margin: 0;
 	padding: 0;
 }
-.labels > label {
+.labels label {
 	display: block;
 }
-.small {
-	width: 4em;
-}
-
-.reverse {
-	direction: rtl;
+.text {
+	box-sizing: border-box;
 }
 
 .eq-reset {
@@ -82,14 +65,34 @@ input[type="range"][orient="vertical"] {
 	position: absolute;
 	bottom: 50%;
 	width: 0.5em;
-	height: 1px;
-	background-color: silver;
+	border-top: 1px solid silver;
 }
 .eq-slider:before {
 	left: -0.25em;
 }
 .eq-slider:after {
 	right: -0.25em
+}
+
+.device {
+	min-width: 6em;
+}
+
+.p > * {
+	display: inline-block;
+	white-space: nowrap;
+}
+.p:after {
+	content: '';
+	display: block;
+	clear: right;
+}
+.save {
+	float: right;
+}
+
+.reverse {
+	direction: rtl;
 }
 
 .player audio {

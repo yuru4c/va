@@ -2,6 +2,7 @@
 'use strict';
 
 var SAVE = 'va-form';
+var CAPTURE = '\0';
 var CONSTRAINTS = {
 	'autoGainControl': false,
 	'echoCancellation': false,
@@ -80,12 +81,12 @@ function Content(fft) {
 }
 
 function Plot(elements, canvas) {
+	this.nyquist = elements['fft-rate'].value / 2;
 	this.fs = +elements['option-fs'].value;
 	this.log = elements['log'].checked;
 	this.order = +elements['order'].value;
 	this.detect = +getChecked(elements['detect']);
 	
-	this.nyquist = 0;
 	this.min = 0;
 	this.max = 0;
 	
@@ -151,6 +152,37 @@ Plot.prototype.draw = function (content) {
 	this.s.draw(p.sqrtS);
 	
 	this.content = content;
+};
+
+function Text(select) {
+	this.select = select;
+	this.parent = select.parentNode;
+	this.input = document.createElement('input');
+	this.input.className = 'text';
+	this.setWidth();
+}
+
+Text.prototype.setWidth = function () {
+	var hidden = this.select.hidden;
+	this.select.hidden = false;
+	var width = this.select.offsetWidth + 'px';
+	this.select.hidden = hidden;
+	this.input.style.width = width;
+	return width;
+};
+
+Text.prototype.insert = function (value) {
+	this.input.value = value;
+	this.select.hidden = true;
+	if (this.input.parentNode == null) {
+		this.parent.insertBefore(this.input, this.select);
+	}
+};
+Text.prototype.remove = function () {
+	if (this.input.parentNode == this.parent) {
+		this.parent.removeChild(this.input);
+	}
+	this.select.hidden = false;
 };
 
 function Timer(text, date) {
@@ -274,8 +306,7 @@ function Constraints(fieldset) {
 	this.fieldset = fieldset;
 	
 	this.select = fieldset.form.elements['constraints-device'];
-	this.label = this.select.parentNode;
-	this.text = document.createTextNode('');
+	this.text = new Text(this.select);
 	this.checks = {};
 	
 	this.deviceId = this.select.value;
@@ -287,6 +318,7 @@ function Constraints(fieldset) {
 	this.disabled = false;
 	this.once = false;
 	
+	this.display = false;
 	this.__enumerate = function (devices) {
 		self._enumerate(devices);
 	};
@@ -294,6 +326,9 @@ function Constraints(fieldset) {
 	if ('mediaDevices' in navigator) {
 		if ('getSupportedConstraints' in navigator.mediaDevices) {
 			this.initChecks();
+		}
+		if ('getDisplayMedia' in navigator.mediaDevices) {
+			this.display = true;
 		}
 		if ('enumerateDevices' in navigator.mediaDevices) {
 			this.enumerate();
@@ -303,6 +338,9 @@ function Constraints(fieldset) {
 			});
 			this.once = true;
 		}
+	}
+	if (!this.once) {
+		this._enumerate([]);
 	}
 }
 
@@ -329,32 +367,45 @@ Constraints.prototype.enumerate = function () {
 };
 Constraints.prototype._enumerate = function (devices) {
 	this.select.innerHTML = '';
-	for (var i = 0; i < devices.length; i++) {
-		var info = devices[i];
-		if (info.kind == 'audioinput') {
-			this.select.add(new Option(
-				info.label || info.deviceId || '(不明)',
-				info.deviceId));
+	if (devices.length == 0) {
+		this.select.add(new Option('(なし)', ''));
+	} else {
+		for (var i = 0; i < devices.length; i++) {
+			var info = devices[i];
+			if (info.kind == 'audioinput') {
+				this.select.add(new Option(
+					info.label || info.deviceId || '(不明)',
+					info.deviceId));
+			}
 		}
 	}
+	if (this.display) {
+		this.select.add(new Option('(キャプチャ)', CAPTURE));
+	}
 	setSelected(this.select, this.deviceId);
+	this.text.setWidth();
 };
 
 Constraints.prototype.get = function () {
-	var constraints = {};
+	var audio = {};
 	this.deviceId = this.select.value;
-	if (this.deviceId) {
-		constraints['deviceId'] = this.deviceId;
+	if (this.deviceId && this.deviceId != CAPTURE) {
+		audio['deviceId'] = this.deviceId;
 	}
 	for (var k in this.checks) {
-		constraints[k] = this.checks[k].checked;
+		audio[k] = this.checks[k].checked;
+	}
+	
+	var constraints = { audio: audio };
+	if (this.deviceId == CAPTURE) {
+		constraints['video'] = true;
 	}
 	this.constraints = constraints;
 	return constraints;
 };
 
 Constraints.prototype.onStart = function (context) {
-	if (this.once) {
+	if (this.once && this.deviceId != CAPTURE) {
 		this.once = false;
 		this.enumerate();
 	}
@@ -364,28 +415,26 @@ Constraints.prototype.onStart = function (context) {
 	if (tracks.length > 0) {
 		var track = tracks[0];
 		var label = track.label;
-		
+		var settings;
 		if (context.settingsInTrack) {
-			var settings = track.getSettings();
-			if (!label) {
-				if ('deviceId' in settings) {
-					label = settings['deviceId'];
-				}
-			}
-			for (var k in this.checks) {
-				var check = this.checks[k];
-				if (k in settings) {
-					check.checked = settings[k];
-				} else {
-					check.style.visibility = 'hidden';
-				}
+			settings = track.getSettings();
+			if (!label && 'deviceId' in settings) {
+				label = settings['deviceId'];
 			}
 		}
 		
-		this.select.hidden = true;
-		this.text.data = label || '(不明)';
-		if (this.text.parentNode == null) {
-			this.label.insertBefore(this.text, this.select);
+		this.text.insert(label || '(不明)');
+		for (var k in this.checks) {
+			var check = this.checks[k];
+			if (context.settingsInTrack) {
+				if (k in settings) {
+					check.checked = settings[k];
+				} else {
+					check.indeterminate = true;
+				}
+			} else {
+				check.style.visibility = 'hidden';
+			}
 		}
 	}
 	this.disabled = true;
@@ -393,14 +442,12 @@ Constraints.prototype.onStart = function (context) {
 
 Constraints.prototype.onStop = function () {
 	if (this.disabled) {
-		if (this.text.parentNode == this.label) {
-			this.label.removeChild(this.text);
-		}
-		setSelected(this.select, this.deviceId);
-		this.select.hidden = false;
+		this.text.remove();
+		var audio = this.constraints.audio;
 		for (var k in this.checks) {
 			var check = this.checks[k];
-			check.checked = this.constraints[k];
+			check.indeterminate = false;
+			check.checked = audio[k];
 			check.style.visibility = '';
 		}
 		this.disabled = false;
@@ -477,10 +524,14 @@ document.addEventListener('DOMContentLoaded', function () {
 	});
 	
 	var ff = document.getElementById('fieldset-fft');
-	var selectRate = elements['fft-rate'];
-	var selectSize = elements['fft-size'];
-	var textRate = document.createTextNode('');
-	var textSize = document.createTextNode('');
+	var textRate = new Text(elements['fft-rate']);
+	var textSize = new Text(elements['fft-size']);
+	function setWidth() {
+		var width = textRate.setWidth();
+		textSize.setWidth();
+		elements['fft-stc'].style.width = width;
+	}
+	setWidth();
 	
 	setOninput([elements['option-fs']], function () {
 		plot.fs = +this.value;
@@ -539,12 +590,8 @@ document.addEventListener('DOMContentLoaded', function () {
 	function onStart(fft) {
 		var option = context.fftOption;
 		
-		selectRate.hidden = true;
-		selectSize.hidden = true;
-		textRate.data = fft.sampleRate;
-		textSize.data = fft.sampleSize;
-		selectRate.parentNode.insertBefore(textRate, selectRate);
-		selectSize.parentNode.insertBefore(textSize, selectSize);
+		textRate.insert(fft.sampleRate);
+		textSize.insert(fft.sampleSize);
 		elements['fft-stc'].value = option.smoothing;
 		
 		var nyquist = fft.sampleRate / 2;
@@ -635,8 +682,8 @@ document.addEventListener('DOMContentLoaded', function () {
 	
 	function start(self) {
 		context.fftOption = new main.FFTOption(
-			+selectRate.value,
-			+selectSize.value,
+			+elements['fft-rate'].value,
+			+elements['fft-size'].value,
 			+elements['fft-stc'].value,
 			eq.checked ? graphicEq.value : null);
 		
@@ -676,10 +723,8 @@ document.addEventListener('DOMContentLoaded', function () {
 		interval.clear();
 		
 		cs.onStop();
-		textRate.parentNode.removeChild(textRate);
-		textSize.parentNode.removeChild(textSize);
-		selectRate.hidden = false;
-		selectSize.hidden = false;
+		textRate.remove();
+		textSize.remove();
 		setDisabled([fm, eq, ff, fc], false);
 		
 		if (audio != null) {
@@ -729,9 +774,17 @@ document.addEventListener('DOMContentLoaded', function () {
 		plot.init();
 	});
 	
+	document.getElementById('fieldsets')
+	.addEventListener('toggle', function () {
+		if (this.open) {
+			setWidth();
+			cs.text.setWidth();
+		}
+	});
+	
 	document.getElementById('container')
 	.addEventListener('click', function () {
-		window.scrollBy(0, this.getBoundingClientRect().top - 8);
+		window.scroll(0, this.offsetTop - 8);
 	});
 	var canvas = {
 		fft: document.getElementById('canvas-fft'),
@@ -775,9 +828,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	
 	window.addEventListener('pageshow', function () {
 		load();
-		
 		plot = new Plot(elements, canvas);
-		plot.nyquist = selectRate.value / 2;
 		
 		startMode = +getChecked(elements['mode']);
 		

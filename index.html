@@ -9,7 +9,7 @@
 <body>
 <div>
 	<form name="main">
-		<details class="fieldsets">
+		<details class="fieldsets" id="fieldsets">
 			<summary>設定</summary>
 			<fieldset>
 				<legend>開始</legend>
@@ -48,15 +48,15 @@
 					<div class="eq" id="div-eq">
 						<span class="eq-group">
 							<label>
-								<input type="radio" name="eq-group" value="0" checked>
+								<input type="radio" name="eq-group" value="0" checked />
 								別々
 							</label>
 							<label>
-								<input type="radio" name="eq-group" value="1">
+								<input type="radio" name="eq-group" value="1" />
 								緩く
 							</label>
 							<label>
-								<input type="radio" name="eq-group" value="2">
+								<input type="radio" name="eq-group" value="2" />
 								堅く
 							</label>
 						</span>
@@ -66,7 +66,7 @@
 			</fieldset>
 			<fieldset class="labels">
 				<legend>FFT</legend>
-				<fieldset class="div labels" id="fieldset-fft">
+				<fieldset class="div" id="fieldset-fft">
 					<label>
 						周波数:
 						<select name="fft-rate">
@@ -103,7 +103,7 @@
 					</label>
 					<label>
 						平滑化:
-						<input type="number" name="fft-stc" class="small"
+						<input type="number" name="fft-stc" class="text"
 							step="0.05" min="0" max="1" value="0.2" />
 					</label>
 				</fieldset>
@@ -130,7 +130,7 @@
 				<legend>入力</legend>
 				<label>
 					デバイス:
-					<select name="constraints-device"></select>
+					<select name="constraints-device" class="device"></select>
 				</label>
 			</fieldset>
 			<p class="p">
