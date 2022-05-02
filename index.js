@@ -367,17 +367,16 @@ Constraints.prototype.enumerate = function () {
 };
 Constraints.prototype._enumerate = function (devices) {
 	this.select.innerHTML = '';
-	if (devices.length == 0) {
-		this.select.add(new Option('(なし)', ''));
-	} else {
-		for (var i = 0; i < devices.length; i++) {
-			var info = devices[i];
-			if (info.kind == 'audioinput') {
-				this.select.add(new Option(
-					info.label || info.deviceId || '(不明)',
-					info.deviceId));
-			}
+	for (var i = 0; i < devices.length; i++) {
+		var info = devices[i];
+		if (info.kind == 'audioinput') {
+			this.select.add(new Option(
+				info.label || info.deviceId || '(不明)',
+				info.deviceId));
 		}
+	}
+	if (this.select.length == 0) {
+		this.select.add(new Option('(なし)', ''));
 	}
 	if (this.display) {
 		this.select.add(new Option('(キャプチャ)', CAPTURE));

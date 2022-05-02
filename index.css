@@ -76,6 +76,7 @@ input[type="range"][orient="vertical"] {
 
 .device {
 	min-width: 6em;
+	max-width: 18em;
 }
 
 .p > * {
