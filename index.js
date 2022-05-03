@@ -159,16 +159,18 @@ function Text(select) {
 	this.parent = select.parentNode;
 	this.input = document.createElement('input');
 	this.input.className = 'text';
-	this.setWidth();
 }
 
 Text.prototype.setWidth = function () {
 	var hidden = this.select.hidden;
 	this.select.hidden = false;
-	var width = this.select.offsetWidth + 'px';
+	var width = this.select.offsetWidth;
 	this.select.hidden = hidden;
-	this.input.style.width = width;
-	return width;
+	
+	if (width == 0) {
+		return null;
+	}
+	return this.input.style.width = width + 'px';
 };
 
 Text.prototype.insert = function (value) {
@@ -528,7 +530,9 @@ document.addEventListener('DOMContentLoaded', function () {
 	function setWidth() {
 		var width = textRate.setWidth();
 		textSize.setWidth();
-		elements['fft-stc'].style.width = width;
+		if (width != null) {
+			elements['fft-stc'].style.width = width;
+		}
 	}
 	setWidth();
 	

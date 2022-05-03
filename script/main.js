@@ -10,6 +10,13 @@ var EQ = (function (eq, frequency, length) {
 	return eq;
 })([], 16000, 10);
 
+var log = (function (array) {
+	return function (logE, x) {
+		array[0] = Math.log(x) * logE;
+		return Math.floor(array[0]);
+	};
+})(new Float32Array(1));
+
 function formatInt(digits, number) {
 	return number < 0 ? '-' + formatInt(digits, -number) :
 		(9999999999 - ~number + '').slice(-digits);
@@ -133,8 +140,8 @@ FFT.prototype.init = function (option) {
 		this.destination = this.filters[0];
 	}
 	
-	var n = Math.pow(2, Math.floor(Math.log2(
-		this.contextSampleRate / option.sampleRate)));
+	var n = Math.pow(2, log(Math.LOG2E,
+		this.contextSampleRate / option.sampleRate));
 	var ratio = n < 1 ? 1 : n;
 	this.sampleRate = this.contextSampleRate / ratio;
 	
@@ -526,7 +533,7 @@ function setValues(elements, values) {
 }
 
 return {
-	EQ: EQ, formatInt: formatInt,
+	EQ: EQ, log: log, formatInt: formatInt,
 	FFTOption: FFTOption, Context: Context,
 	Recorder: Recorder,
 	Interval: Interval,

@@ -127,7 +127,7 @@ function logIndexToX(i) {
 	return (i - n * 10) * Math.pow(10, n);
 }
 function xToLogIndex(x) {
-	var n = Math.floor(Math.log10(x));
+	var n = main.log(Math.LOG10E, x);
 	return n * 10 + x / Math.pow(10, n);
 }
 

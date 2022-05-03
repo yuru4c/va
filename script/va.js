@@ -1,6 +1,8 @@
 var va = (function () {
 'use strict';
 
+var DB = Math.LOG10E * 10.0;
+
 function C(re, im) {
 	this.re = re;
 	this.im = im;
@@ -195,13 +197,13 @@ Series.prototype.getW = function (i) {
 
 function freqz(b2, a, fs, n) {
 	var length = n == null ? 512 : n;
-	var c = Math.log10(b2);
+	var c = Math.log(b2);
 	var fa = rfft(a, length * 2);
 	
 	var h = [];
 	h.length = length;
 	for (var i = 0; i < length; i++) {
-		h[i] = (c - Math.log10(fa[i].abs2())) * 10.0;
+		h[i] = (c - Math.log(fa[i].abs2())) * DB;
 	}
 	return new Series(h, fs);
 }
