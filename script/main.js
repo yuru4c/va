@@ -55,6 +55,15 @@ function stop(stream) {
 		tracks[i].stop();
 	}
 }
+function removeVideo(stream) {
+	var tracks = stream.getVideoTracks();
+	for (var i = 0; i < tracks.length; i++) {
+		var track = tracks[i];
+		stream.removeTrack(track);
+		track.stop();
+	}
+	return stream;
+}
 
 function FFTOption(sampleRate, sampleSize, smoothing, eq) {
 	this.sampleRate = sampleRate;
@@ -195,6 +204,7 @@ Context.prototype.createFFT = function (sampleRate) {
 Context.prototype.start = function (constraints) {
 	if ('video' in constraints) {
 		return navigator.mediaDevices.getDisplayMedia(constraints)
+			.then(removeVideo)
 			.then(this.__start);
 	}
 	if (this.getUserMedia != null) {
@@ -250,13 +260,13 @@ Context.prototype.startAudio = function (element) {
 };
 
 Context.prototype.stop = function () {
+	this.fft.analyser.disconnect();
 	this.source.disconnect();
-	this.source = null;
 	if (this.stream != null) {
 		stop(this.stream);
 		this.stream = null;
 	}
-	this.fft.analyser.disconnect();
+	this.source = null;
 	this.fft = null;
 };
 
