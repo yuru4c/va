@@ -2,6 +2,7 @@ var va = (function () {
 'use strict';
 
 var DB = Math.LOG10E * 10.0;
+var AD = Math.LN10 / 10.0;
 
 function C(re, im) {
 	this.re = re;
@@ -115,7 +116,7 @@ function autocor(y, l, m) {
 					d -= f0 - i0;
 				}
 				if (d > 0.0) {
-					p += Math.pow(10, y[k] * 0.1) * d;
+					p += Math.exp(y[k] * AD) * d;
 				}
 			}
 			x[i] = new C(p, 0.0);
